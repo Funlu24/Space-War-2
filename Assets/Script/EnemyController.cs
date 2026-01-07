@@ -2,43 +2,87 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Düşman türlerini burada listeliyoruz
+public enum EnemyType { DuzGiden, TakipEden, ZikzakGiden }
+
 public class EnemyController : MonoBehaviour
 {
-    public float speed = 3f; // Düşman hızı
-    private Transform playerTransform; // Oyuncunun yerini tutacak değişken
+    [Header("Ayarlar")]
+    public EnemyType dusmanTuru; // Unity'den seçeceğimiz kutucuk
+    public float speed = 4f; 
+    
+    [Header("Zikzak Ayarları (Sadece Zikzak seçilirse çalışır)")]
+    public float frequency = 2f; // Ne kadar hızlı sağ-sol yapsın
+    public float magnitude = 2f; // Ne kadar geniş sağ-sol yapsın
+
+    private Transform playerTransform;
+    private Vector3 startPos; // Zikzak için başlangıç pozisyonu
 
     void Start()
     {
-        // Oyun başladığında sahnede "Player" etiketli objeyi bul ve yerini hafızaya al
+        // Oyuncuyu bul
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
             playerTransform = playerObj.transform;
         }
+
+        startPos = transform.position; // Doğduğu yeri kaydet
     }
 
     void Update()
     {
-        // Eğer oyuncu hala hayattaysa
+        // Hangi tür seçiliyse o hareketi yap
+        switch (dusmanTuru)
+        {
+            case EnemyType.DuzGiden:
+                MoveStraight();
+                break;
+
+            case EnemyType.TakipEden:
+                MoveTowardsPlayer();
+                break;
+
+            case EnemyType.ZikzakGiden:
+                MoveZigZag();
+                break;
+        }
+    }
+
+    // 1. TİP: DÜZ AŞAĞI (Klasik)
+    void MoveStraight()
+    {
+        transform.Translate(Vector3.down * speed * Time.deltaTime, Space.World);
+    }
+
+    // 2. TİP: TAKİPÇİ (Kamikaze)
+    void MoveTowardsPlayer()
+    {
         if (playerTransform != null)
         {
-            // 1. YÖN HESAPLA: (Hedef - Ben) işlemi yönü verir
             Vector3 direction = (playerTransform.position - transform.position).normalized;
-
-            // 2. O YÖNE GİT
             transform.Translate(direction * speed * Time.deltaTime, Space.World);
-
-            // 3. YÜZÜNÜ DÖN (Opsiyonel ama şık durur)
+            
+            // Yüzünü dönme efekti
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
         }
         else
         {
-            // Oyuncu öldüyse dümdüz aşağı devam et
-            transform.Translate(Vector3.down * speed * Time.deltaTime, Space.World);
+            MoveStraight(); // Oyuncu yoksa düz git
         }
     }
-    
-    // Çarpışma kodlarını kaldırdım çünkü senin mermi scriptin (MissileController)
-    // zaten çarpışmayı yönetip düşmanı yok ediyor. İki tarafta da kod olursa hata çıkar.
+
+    // 3. TİP: ZİKZAK (Yılan gibi)
+    void MoveZigZag()
+    {
+        // Aşağı inmeye devam et
+        transform.position += Vector3.down * speed * Time.deltaTime;
+
+        // Sağa sola sinüs dalgası ekle
+        Vector3 pos = transform.position;
+        // Mathf.Sin ile dalgalanma yaratıyoruz
+        pos.x = startPos.x + Mathf.Sin(Time.time * frequency) * magnitude;
+        transform.position = pos;
+    }
 }

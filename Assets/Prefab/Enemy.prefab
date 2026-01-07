@@ -124,4 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15109a8cef31f48bcba5bf13a23911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dusmanTuru: 1
   speed: 5
+  frequency: 2
+  magnitude: 2
