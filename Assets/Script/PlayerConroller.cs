@@ -26,14 +26,17 @@ public class PlayerConroller : MonoBehaviour
     public Animator shipAnimator;          
     public GameObject EngineThrustEffect;  
     private SpriteRenderer spriteRenderer; 
+    
+    public float fireRate = 0.2f;    // Ateş etme sıklığı (Saniye)
+    private float nextFireTime = 0f; // Zamanlayıcı
+private bool isAutoFiring = false; // Başlangıçta kapalı olsun
 
     private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    // 1. ADIM: Girdileri (Input) burada alıyoruz.
-    // Update her kare çalışır, tuş basımını kaçırmaz.
+   
     private void Update()
     {
         ProcessInputs(); // Inputları alan fonksiyon
@@ -41,16 +44,12 @@ public class PlayerConroller : MonoBehaviour
         CheckEnemyAhead();
     }
 
-    // [GEREKSİNİM 6 - KISIM A] FixedUpdate
-    // 2. ADIM: Hareketi burada uyguluyoruz.
-    // Fizik ve hareket hesaplamaları için sabit zaman aralığında çalışır (0.02sn).
+    
     private void FixedUpdate()
     {
         MovePlayer();
     }
 
-    // [GEREKSİNİM 6 - KISIM B] LateUpdate
-    // 3. ADIM: Her şey bittikten sonra sınırları düzeltiyoruz.
     private void LateUpdate()
     {
         ClampPosition();
@@ -106,12 +105,22 @@ public class PlayerConroller : MonoBehaviour
         Debug.DrawRay(MissileSpawnPoint.position, Vector3.up * 10f, Color.red);
     }
 
-    void PlayerShoot()
+void PlayerShoot()
     {
-        if (Input.GetButtonDown("Jump"))
+        // 1. AÇMA / KAPAMA KONTROLÜ
+        // Space tuşuna veya Mouse'a 1 kere basıldığında modu değiştir
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+        {
+            isAutoFiring = !isAutoFiring; // True ise False yapar, False ise True yapar.
+        }
+
+        // 2. ATEŞ ETME EYLEMİ
+        // Eğer mod AÇIKSA (isAutoFiring == true) ve zaman geldiyse ateş et
+        if (isAutoFiring && Time.time > nextFireTime)
         {
             SpawnMissile();
             SpawnMuzzleFlash();
+            nextFireTime = Time.time + fireRate;
         }
     }
 
