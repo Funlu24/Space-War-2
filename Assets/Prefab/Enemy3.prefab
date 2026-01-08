@@ -100,6 +100,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dusmanTuru: 2
   speed: 5
+  canShoot: 1
+  enemyBulletPrefab: {fileID: 5346398338344656570, guid: 41243e65fa55a9146aa7dab0a5126566, type: 3}
+  fireRate: 1.5
   frequency: 2
   magnitude: 2
 --- !u!61 &4000545416010242577

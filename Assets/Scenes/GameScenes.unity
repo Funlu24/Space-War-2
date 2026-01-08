@@ -3228,6 +3228,7 @@ MonoBehaviour:
   MissileSpawnPoint: {fileID: 905499511}
   shipAnimator: {fileID: 1931797143}
   EngineThrustEffect: {fileID: 1324766663}
+  fireRate: 0.2
 --- !u!61 &1931797141
 BoxCollider2D:
   m_ObjectHideFlags: 0
