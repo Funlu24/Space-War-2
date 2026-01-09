@@ -11,7 +11,8 @@ GameObject:
   - component: {fileID: 2246756490337973935}
   - component: {fileID: 2074913947438284368}
   - component: {fileID: 569292709313828462}
-  - component: {fileID: 3408348416976544788}
+  - component: {fileID: 2887570537366289439}
+  - component: {fileID: 8020138340286504392}
   m_Layer: 0
   m_Name: EnemyMissile
   m_TagString: Untagged
@@ -112,7 +113,20 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 0.08, y: 0.25}
   m_EdgeRadius: 0
---- !u!114 &3408348416976544788
+--- !u!114 &2887570537366289439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5346398338344656570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d3744e9964dffc47918c0906b100d5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lifeTime: 3
+--- !u!114 &8020138340286504392
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

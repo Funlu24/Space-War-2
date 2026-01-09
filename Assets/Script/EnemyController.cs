@@ -96,7 +96,8 @@ public class EnemyController : MonoBehaviour
         if (enemyBulletPrefab != null)
         {
             // Mermiyi oluştur
-            Instantiate(enemyBulletPrefab, transform.position, Quaternion.identity);
+           // Instantiate(enemyBulletPrefab, transform.position, Quaternion.identity);
+           ObjectPool.instance.SpawnFromPool("EnemyBullet", transform.position, Quaternion.identity);
         }
     }
 }

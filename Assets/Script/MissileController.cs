@@ -23,7 +23,7 @@ void OnCollisionEnter2D(Collision2D collision)
         GameManager.instance.AddScore(100);
 
         Destroy(collision.gameObject); // Düşmanı yok et
-        Destroy(gameObject); // Mermiyi yok et
+        gameObject.SetActive(false);
     }
 }
 }

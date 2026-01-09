@@ -32,7 +32,7 @@ public class EnemyBullet : MonoBehaviour
             }
 
             // Mermiyi yok et
-            Destroy(gameObject);
+           gameObject.SetActive(false);
         }
         // Eğer mermi başka bir düşmana veya kendi mermisine çarparsa hiçbir şey yapma
     }

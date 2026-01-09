@@ -38,9 +38,11 @@ public class AsteroidController : MonoBehaviour
         // Mermiye Çarparsa
         else if (collision.gameObject.CompareTag("Missile")) 
         {
-            Destroy(collision.gameObject); // Mermiyi yok et
-            GameManager.instance.AddScore(50); // (İstersen) Meteoru vurunca 50 puan ver
-            DestroyAsteroid(); // Meteoru yok et
+            
+            collision.gameObject.SetActive(false); // Sadece kapat
+            
+            GameManager.instance.AddScore(50); 
+            DestroyAsteroid(); 
         }
     }
 

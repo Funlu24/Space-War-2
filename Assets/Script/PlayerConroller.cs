@@ -126,9 +126,11 @@ void PlayerShoot()
 
     void SpawnMissile()
     {
-        GameObject gm = Instantiate(MissiliePrefab, MissileSpawnPoint.position, Quaternion.identity);
-        gm.transform.SetParent(null);
-        Destroy(gm, DestroyTime);
+        //GameObject gm = Instantiate(MissiliePrefab, MissileSpawnPoint.position, Quaternion.identity);
+        //gm.transform.SetParent(null);
+        //Destroy(gm, DestroyTime);
+        ObjectPool.instance.SpawnFromPool("PlayerBullet", MissileSpawnPoint.position, Quaternion.identity);
+    
     }
 
     void SpawnMuzzleFlash()
