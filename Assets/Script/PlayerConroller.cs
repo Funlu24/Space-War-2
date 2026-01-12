@@ -135,12 +135,13 @@ void PlayerShoot()
 
     void SpawnMuzzleFlash()
     {
-        if (GameManager.instance.MuzzleFlashEffect != null)
+       /* if (GameManager.instance.MuzzleFlashEffect != null)
         {
             GameObject muzzle = Instantiate(GameManager.instance.MuzzleFlashEffect, MissileSpawnPoint.position, Quaternion.identity);
             muzzle.transform.SetParent(null);
             Destroy(muzzle, DestroyTime);
-        }
+        }  */
+        ObjectPool.instance.SpawnFromPool("MuzzleFlash", MissileSpawnPoint.position, Quaternion.identity);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

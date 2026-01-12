@@ -1995,8 +1995,8 @@ MonoBehaviour:
   minInstantiateValue: -10
   maxInstantiateValue: 10
   enemyDestroyTime: 10
-  ParticleEffect: {fileID: 100002, guid: cafecd3fc3b761c45bb1553f35cf5c96, type: 3}
-  MuzzleFlashEffect: {fileID: 100002, guid: 565cdc2ed7b030a41accd8f00ae59a50, type: 3}
+  ParticleEffect: {fileID: 1670982938733092282, guid: ce05f59cd2ff7c04888cb1c6b954c708, type: 3}
+  MuzzleFlashEffect: {fileID: 7977812882126603558, guid: 02a0d87b4508d6e4fa3048b468a63317, type: 3}
   StartMenu: {fileID: 1949293908}
   PausePanel: {fileID: 163655914}
   AsteroidPrefabs:
@@ -3430,6 +3430,9 @@ MonoBehaviour:
   - tag: Astreoid3
     prefab: {fileID: 2340216076556921137, guid: f40be23d77db4614c8ea5214416d4c67, type: 3}
     size: 15
+  - tag: MuzzleFlash
+    prefab: {fileID: 7977812882126603558, guid: 02a0d87b4508d6e4fa3048b468a63317, type: 3}
+    size: 10
 --- !u!4 &2070825235
 Transform:
   m_ObjectHideFlags: 0
