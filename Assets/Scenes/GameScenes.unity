@@ -3412,6 +3412,24 @@ MonoBehaviour:
   - tag: PlayerBullet
     prefab: {fileID: 4588558485051403074, guid: 2b4b849ad6ad0df498a73bb7209513b7, type: 3}
     size: 50
+  - tag: Enemy
+    prefab: {fileID: 7065451153807550212, guid: a90814d8ab55eb84e96e025e311e85d2, type: 3}
+    size: 15
+  - tag: Enemy2
+    prefab: {fileID: 6500197894439291741, guid: 1fc510cfef4ec3844be3c7202eab8ae6, type: 3}
+    size: 15
+  - tag: Enemy3
+    prefab: {fileID: 271276125632518964, guid: 8f655e6af43170a488f9a2bf665f5a50, type: 3}
+    size: 15
+  - tag: Astreoid1
+    prefab: {fileID: 1350472877957527996, guid: c51d2945f358d4348b41cab6240ae46c, type: 3}
+    size: 15
+  - tag: Astreoid2
+    prefab: {fileID: 692174652318510282, guid: c4fe888fa14be1b4087e43059c386738, type: 3}
+    size: 15
+  - tag: Astreoid3
+    prefab: {fileID: 2340216076556921137, guid: f40be23d77db4614c8ea5214416d4c67, type: 3}
+    size: 15
 --- !u!4 &2070825235
 Transform:
   m_ObjectHideFlags: 0

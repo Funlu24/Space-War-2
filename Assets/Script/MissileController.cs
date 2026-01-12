@@ -22,7 +22,8 @@ void OnCollisionEnter2D(Collision2D collision)
         // YENİ: SKOR EKLE (Örneğin 100 puan)
         GameManager.instance.AddScore(100);
 
-        Destroy(collision.gameObject); // Düşmanı yok et
+       // Destroy(collision.gameObject); // Düşmanı yok et
+        collision.gameObject.SetActive(false);
         gameObject.SetActive(false);
     }
 }

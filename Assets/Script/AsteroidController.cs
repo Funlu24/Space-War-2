@@ -4,42 +4,40 @@ using UnityEngine;
 
 public class AsteroidController : MonoBehaviour
 {
-    public float speed = 4f;           // Düşme hızı
-    public float rotationSpeed = 50f;  // Dönme hızı (Görsellik için)
+    public float speed = 4f; 
+    public float rotationSpeed = 50f; 
 
     void Update()
     {
-        // DÜZELTME: Space.World ekledik. 
-        // Böylece taş dönse bile yönü hep ekranın aşağısı olur.
+        // Hareket ve Dönme
         transform.Translate(Vector3.down * speed * Time.deltaTime, Space.World);
-
-        // Kendi etrafında dönme
         transform.Rotate(Vector3.forward * rotationSpeed * Time.deltaTime);
+
+        // --- YENİ: EKRANDAN ÇIKMA KONTROLÜ ---
+        // Eğer meteor çok aşağı inerse (kimse vurmadıysa) havuza geri dönsün
+        if (transform.position.y < -7f)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
-    // Çarpışma Mantığı
-  private void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         // Oyuncuya Çarparsa
         if (collision.gameObject.CompareTag("Player"))
         {
-            // 1. Çarptığımız objenin (Player) scriptine ulaş
             PlayerConroller playerScript = collision.gameObject.GetComponent<PlayerConroller>();
-            
-            // 2. Eğer scripti bulduysak hasar ver
             if (playerScript != null)
             {
-                playerScript.TakeDamage(); // Canı 1 azalt
+                playerScript.TakeDamage(); 
             }
-
-            // 3. Meteoru yok et
             DestroyAsteroid();
         }
         // Mermiye Çarparsa
         else if (collision.gameObject.CompareTag("Missile")) 
         {
-            
-            collision.gameObject.SetActive(false); // Sadece kapat
+            // Mermiyi kapat (Havuz mantığı)
+            collision.gameObject.SetActive(false); 
             
             GameManager.instance.AddScore(50); 
             DestroyAsteroid(); 
@@ -48,12 +46,15 @@ public class AsteroidController : MonoBehaviour
 
     void DestroyAsteroid()
     {
+        // Patlama efekti (Bunu şimdilik Instantiate bırakabiliriz, ilerde havuza alınabilir)
         if(GameManager.instance.ParticleEffect != null)
         {
             GameObject effect = Instantiate(GameManager.instance.ParticleEffect, transform.position, Quaternion.identity);
             Destroy(effect, 2f);
         }
-        Destroy(gameObject);
-    }
 
+        // ESKİ: Destroy(gameObject);
+        // YENİ: Havuza geri gönder
+        gameObject.SetActive(false); 
+    }
 }

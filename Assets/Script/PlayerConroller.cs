@@ -151,8 +151,8 @@ void PlayerShoot()
 
             GameObject impactEffect = Instantiate(GameManager.instance.ParticleEffect, transform.position, Quaternion.identity);
             Destroy(impactEffect, 2f);
-            Destroy(collision.gameObject);
-
+           // Destroy(collision.gameObject);
+           collision.gameObject.SetActive(false);
             TakeDamage();
         }
     }

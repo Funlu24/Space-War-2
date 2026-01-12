@@ -60,6 +60,11 @@ public class EnemyController : MonoBehaviour
             Shoot();
             nextFireTime = Time.time + fireRate;
         }
+        if (transform.position.y < -6f)
+        {
+            gameObject.SetActive(false); // Havuza geri dön
+        }
+    
     }
 
     void MoveStraight()
