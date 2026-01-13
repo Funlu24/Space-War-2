@@ -2,38 +2,47 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI; 
-using TMPro; // <-- BU KÜTÜPHANEYİ EKLEDİK (TextMeshPro için şart)
-using UnityEngine.SceneManagement; // <-- Sahne yönetimi için şart!
+using TMPro; 
+using UnityEngine.SceneManagement; 
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    [Header("Enemy Spawning")]
-    public GameObject[] EnemyPrefabs;
-    public float minInstantiateValue;
-    public float maxInstantiateValue;
-    public float enemyDestroyTime = 10f;
+    [Header("Oyun Durumu")]
+    public bool isGameOver = false;
+    public int score = 0;
+    public int highScore = 0; // En yüksek skor
 
-    [Header("Effects")]
+    [Header("Level & XP Sistemi")]
+    public int currentLevel = 1;
+    public float currentXP = 0;
+    public float requiredXP = 100; // İlk level için gereken XP
+    public float xpMultiplier = 1.2f; // Zorluk artış oranı
+
+    [Header("Spawner Ayarları")]
+    // Havuzdaki etiket isimleri (Unity'de yazdığın Tag'ler)
+    public string[] enemyTags = { "Enemy1", "Enemy2", "Enemy3" }; 
+    public string[] meteorTags = { "Meteor1", "Meteor2", "Meteor3" };
+    
+    public float minInstantiateValue = -8f;
+    public float maxInstantiateValue = 8f;
+
+    [Header("Efektler")]
     public GameObject ParticleEffect;
     public GameObject MuzzleFlashEffect;
 
-    [Header("UI & Panels")]
+    [Header("UI & Paneller")]
     public GameObject StartMenu;
     public GameObject PausePanel;
-    [Header("Asteroid Spawning")]
-public GameObject[] AsteroidPrefabs; // Meteor çeşitleri
     
-    // --- BURAYI DEĞİŞTİRDİK ---
-    // Artık "Text" değil "TextMeshProUGUI" istiyoruz.
     public TextMeshProUGUI scoreText;       
     public TextMeshProUGUI bestScoreStart;  
     public TextMeshProUGUI bestScorePause;  
-
-    // SKOR DEĞİŞKENLERİ
-    int score = 0;
-    int highScore = 0;
+    public TextMeshProUGUI levelText;
+    
+    public Slider healthBar; // Can Barı
+    public Slider xpBar;     // XP Barı
 
     private void Awake()
     {
@@ -43,19 +52,24 @@ public GameObject[] AsteroidPrefabs; // Meteor çeşitleri
 
     void Start()
     {
+        // High Score Yükle
         highScore = PlayerPrefs.GetInt("HighScore", 0);
         UpdateHighScoreText();
 
+        // UI Başlangıç Ayarları
+        UpdateUI();
         StartMenu.SetActive(true);
         PausePanel.SetActive(false);
-        Time.timeScale = 0f;
-        
-        InvokeRepeating("InstantiateEnemy", 1f, 1f);
-        InvokeRepeating("InstantiateAsteroid", 2f, 3f);
+        Time.timeScale = 0f; // Oyun duruk başlar
+
+        // Spawner'ları Başlat (Saniye ayarlarını buradan değiştirebilirsin)
+        InvokeRepeating("SpawnEnemy", 1f, 1.5f);
+        InvokeRepeating("SpawnAsteroid", 2f, 3f);
     }
 
     private void Update()
     {
+        // ESC Tuşu ile Durdurma
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (PausePanel.activeSelf) PauseGameButton(false);
@@ -63,68 +77,128 @@ public GameObject[] AsteroidPrefabs; // Meteor çeşitleri
         }
     }
 
+    // --- SKOR VE XP YÖNETİMİ ---
     public void AddScore(int amount)
     {
         score += amount;
-        scoreText.text = "Score: " + score;
+        
+        // Skoru ekranda güncelle
+        if (scoreText != null) scoreText.text = "Score: " + score;
 
+        // High Score Kontrolü
         if (score > highScore)
         {
             highScore = score;
             PlayerPrefs.SetInt("HighScore", highScore);
             UpdateHighScoreText();
         }
+
+        // Skor kazanınca XP de kazan (Skorun yarısı kadar)
+        GainXP(amount / 2);
     }
 
+    public void GainXP(float amount)
+    {
+        currentXP += amount;
+
+        // Level Atladı mı?
+        if (currentXP >= requiredXP)
+        {
+            LevelUp();
+        }
+
+        UpdateXPBar();
+    }
+
+    void LevelUp()
+    {
+        currentLevel++;
+        currentXP = 0; 
+        requiredXP *= xpMultiplier; // Sonraki level zorlaşsın
+
+        // Level atlama efekti veya sesi buraya eklenebilir
+        Debug.Log("LEVEL ATLADIN: " + currentLevel);
+
+        UpdateUI();
+    }
+
+    // --- UI GÜNCELLEMELERİ ---
     void UpdateHighScoreText()
     {
         if(bestScoreStart != null) bestScoreStart.text = "Best Score: " + highScore;
         if(bestScorePause != null) bestScorePause.text = "Best: " + highScore;
     }
 
-    void InstantiateEnemy()
+    public void UpdateHealthUI(int currentHealth, int maxHealth)
     {
-        Vector3 Enemypos = new Vector3(Random.Range(minInstantiateValue, maxInstantiateValue), 6f);
-        int randomIndex = Random.Range(0, EnemyPrefabs.Length); 
-        GameObject enemy = Instantiate(EnemyPrefabs[randomIndex], Enemypos, Quaternion.Euler(0, 0, 180f));
-        Destroy(enemy, enemyDestroyTime);
+        if (healthBar != null)
+        {
+            healthBar.maxValue = maxHealth;
+            healthBar.value = currentHealth;
+        }
     }
-    void InstantiateAsteroid()
-{
-    // Oyun duraklatıldıysa veya menüdeysek üretme
-    if (Time.timeScale == 0f) return;
 
-    Vector3 asteroidPos = new Vector3(Random.Range(minInstantiateValue, maxInstantiateValue), 7f);
+    void UpdateXPBar()
+    {
+        if (xpBar != null)
+        {
+            xpBar.maxValue = requiredXP;
+            xpBar.value = currentXP;
+        }
+    }
 
-    // Rastgele bir meteor seç
-    int randomIndex = Random.Range(0, AsteroidPrefabs.Length);
+    void UpdateUI()
+    {
+        if (scoreText != null) scoreText.text = "Score: " + score;
+        if (levelText != null) levelText.text = "Level: " + currentLevel;
+        UpdateXPBar();
+    }
 
-    // Oluştur
-    GameObject asteroid = Instantiate(AsteroidPrefabs[randomIndex], asteroidPos, Quaternion.identity);
+    // --- HAVUZ SİSTEMİ İLE SPAWN (Optimize Edildi) ---
+    void SpawnEnemy()
+    {
+        // Menüdeysek üretme
+        if (Time.timeScale == 0f) return;
 
-    // 10 saniye sonra yok et (Ekranı doldurmasın)
-    Destroy(asteroid, 10f);
-}
+        Vector3 pos = new Vector3(Random.Range(minInstantiateValue, maxInstantiateValue), 7f, 0);
+        
+        // Rastgele bir düşman türü seç (Havuzdan)
+        if (enemyTags.Length > 0)
+        {
+            string randomTag = enemyTags[Random.Range(0, enemyTags.Length)];
+            ObjectPool.instance.SpawnFromPool(randomTag, pos, Quaternion.Euler(0, 0, 180f));
+        }
+    }
 
+    void SpawnAsteroid()
+    {
+        // Menüdeysek üretme
+        if (Time.timeScale == 0f) return;
+
+        Vector3 pos = new Vector3(Random.Range(minInstantiateValue, maxInstantiateValue), 8f, 0);
+
+        // Rastgele bir meteor türü seç (Havuzdan)
+        if (meteorTags.Length > 0)
+        {
+            string randomTag = meteorTags[Random.Range(0, meteorTags.Length)];
+            ObjectPool.instance.SpawnFromPool(randomTag, pos, Quaternion.identity);
+        }
+    }
+
+    // --- BUTON FONKSİYONLARI ---
     public void StartGameButton()
     {
-        // Kontrol Ediyoruz: Sahnede "Player" etiketli bir obje var mı?
         if (GameObject.FindGameObjectWithTag("Player") != null)
         {
-            // OYUNCU YAŞIYOR (İlk açılış veya Pause'dan devam)
             StartMenu.SetActive(false);
             Time.timeScale = 1f;
         }
         else
         {
-            // OYUNCU ÖLMÜŞ (Destroy olmuş)
-            // Sahneyi baştan yükle (Reset at)
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-            
-            // NOT: Sahne yeniden yüklenince oyunun 'Start' fonksiyonu çalışacak 
-            // ve menü otomatik olarak tekrar açılacak. Bu normaldir.
         }
     }
+
     public void PauseGameButton(bool isPaused)
     {
         if (isPaused)
@@ -146,14 +220,9 @@ public GameObject[] AsteroidPrefabs; // Meteor çeşitleri
         Debug.Log("Oyun Bitti.");
     }
 
-   public void QuitGame()
+    public void QuitGame()
     {
-        Debug.Log("Oyundan çıkış yapıldı!"); // Konsolda çalıştığını görmek için
-
-        // Gerçek oyunda (Build alındığında) uygulamayı kapatır
         Application.Quit();
-
-        // Unity Editöründe test ederken "Play" modunu durdurur
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
         #endif

@@ -30,10 +30,15 @@ public class PlayerConroller : MonoBehaviour
     public float fireRate = 0.2f;    // Ateş etme sıklığı (Saniye)
     private float nextFireTime = 0f; // Zamanlayıcı
 private bool isAutoFiring = false; // Başlangıçta kapalı olsun
+public int maxHealth = 100;
 
     private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        health = maxHealth; 
+        
+        // GameManager'a "Canımı fulle" de
+        GameManager.instance.UpdateHealthUI(health, maxHealth);
     }
 
    
@@ -160,13 +165,15 @@ void PlayerShoot()
 
     public void TakeDamage()
     {
-        health--; 
+        if (isInvulnerable) return;
 
-        if (health >= 0 && health < heartIcons.Length)
-        {
-            heartIcons[health].SetActive(false);
-        }
+        // Canı azalt (Örneğin her vuruşta 10 azalır)
+        health -= 10; 
 
+        // GameManager'daki barı güncelle
+        GameManager.instance.UpdateHealthUI(health, maxHealth);
+
+        // Can 0 olursa öl
         if (health <= 0)
         {
             GameManager.instance.GameOver(); 
@@ -177,7 +184,6 @@ void PlayerShoot()
             StartCoroutine(BlinkRoutine());
         }
     }
-
     IEnumerator BlinkRoutine()
     {
         isInvulnerable = true; 
