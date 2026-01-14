@@ -35,6 +35,7 @@ public class GameManager : MonoBehaviour
     [Header("UI & Paneller")]
     public GameObject StartMenu;
     public GameObject PausePanel;
+    public GameObject LevelUpPanel; // Unity'den buraya paneli sürükleyeceksin
     
     public TextMeshProUGUI scoreText;       
     public TextMeshProUGUI bestScoreStart;  
@@ -78,11 +79,9 @@ public class GameManager : MonoBehaviour
     }
 
     // --- SKOR VE XP YÖNETİMİ ---
-    public void AddScore(int amount)
+   public void AddScore(int amount)
     {
         score += amount;
-        
-        // Skoru ekranda güncelle
         if (scoreText != null) scoreText.text = "Score: " + score;
 
         // High Score Kontrolü
@@ -94,7 +93,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Skor kazanınca XP de kazan (Skorun yarısı kadar)
-        GainXP(amount / 2);
+       // GainXP(amount / 2);
     }
 
     public void GainXP(float amount)
@@ -115,6 +114,14 @@ public class GameManager : MonoBehaviour
         currentLevel++;
         currentXP = 0; 
         requiredXP *= xpMultiplier; // Sonraki level zorlaşsın
+
+        Time.timeScale = 0f; 
+
+    // 2. Level Up Panelini Aç
+    if (LevelUpPanel != null)
+    {
+        LevelUpPanel.SetActive(true);
+    }
 
         // Level atlama efekti veya sesi buraya eklenebilir
         Debug.Log("LEVEL ATLADIN: " + currentLevel);
@@ -184,6 +191,16 @@ public class GameManager : MonoBehaviour
             ObjectPool.instance.SpawnFromPool(randomTag, pos, Quaternion.identity);
         }
     }
+    public void CloseLevelUpPanel()
+{
+    if (LevelUpPanel != null)
+    {
+        LevelUpPanel.SetActive(false);
+    }
+
+    // Oyunu tekrar hareket ettir
+    Time.timeScale = 1f; 
+}
 
     // --- BUTON FONKSİYONLARI ---
     public void StartGameButton()

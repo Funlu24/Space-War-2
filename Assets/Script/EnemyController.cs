@@ -11,9 +11,9 @@ public class EnemyController : MonoBehaviour
     public float speed = 4f; 
     
     [Header("Ateş Etme Ayarları")]
-    public bool canShoot = false; // BU KUTUYU İŞARETLERSEN ATEŞ EDER
-    public GameObject enemyBulletPrefab; // Düşman mermisi prefabını buraya sürükle
-    public float fireRate = 2f; // Kaç saniyede bir ateş etsin
+    public bool canShoot = false; 
+    public GameObject enemyBulletPrefab; 
+    public float fireRate = 2f; 
     private float nextFireTime;
 
     [Header("Zikzak Ayarları")]
@@ -30,11 +30,13 @@ public class EnemyController : MonoBehaviour
         {
             playerTransform = playerObj.transform;
         }
+    }
 
-        startPos = transform.position;
-        
-        // Oyun başladığında hemen ateş etmesin, biraz rastgele beklesin
-        nextFireTime = Time.time + Random.Range(0.5f, 2f);
+    // HAVUZ SİSTEMİ İÇİN KRİTİK: Düşman her canlandığında burası çalışır
+    void OnEnable()
+    {
+        startPos = transform.position; // Yeni doğduğu yeri kaydet (Zikzak için şart)
+        nextFireTime = Time.time + Random.Range(0.5f, 2f); // Ateş süresini sıfırla
     }
 
     void Update()
@@ -54,17 +56,17 @@ public class EnemyController : MonoBehaviour
         }
 
         // 2. ATEŞ ETME MANTIĞI
-        // Eğer "canShoot" işaretliyse VE zamanı geldiyse ateş et
         if (canShoot && Time.time > nextFireTime)
         {
             Shoot();
             nextFireTime = Time.time + fireRate;
         }
+
+        // 3. EKRANDAN ÇIKMA MANTIĞI
         if (transform.position.y < -6f)
         {
-            gameObject.SetActive(false); // Havuza geri dön
+            gameObject.SetActive(false); 
         }
-    
     }
 
     void MoveStraight()
@@ -92,17 +94,40 @@ public class EnemyController : MonoBehaviour
     {
         transform.position += Vector3.down * speed * Time.deltaTime;
         Vector3 pos = transform.position;
+        // startPos.x OnEnable içinde güncellendiği için artık düzgün çalışır
         pos.x = startPos.x + Mathf.Sin(Time.time * frequency) * magnitude;
         transform.position = pos;
     }
 
     void Shoot()
     {
-        if (enemyBulletPrefab != null)
+        // Object Pooling ile mermi oluşturma
+        ObjectPool.instance.SpawnFromPool("EnemyBullet", transform.position, Quaternion.identity);
+    }
+
+    // --- İŞTE SENİN EKLEMEN GEREKEN YER BURASI ---
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        // 1. OYUNCUYA ÇARPARSA
+        if (collision.gameObject.CompareTag("Player"))
         {
-            // Mermiyi oluştur
-           // Instantiate(enemyBulletPrefab, transform.position, Quaternion.identity);
-           ObjectPool.instance.SpawnFromPool("EnemyBullet", transform.position, Quaternion.identity);
+            PlayerConroller player = collision.gameObject.GetComponent<PlayerConroller>();
+            if (player != null)
+            {
+                player.TakeDamage(); // Oyuncunun canını azalt
+            }
+            gameObject.SetActive(false); // Düşmanı yok et (XP vermez, çünkü sen çarptın)
+        }
+        
+        // 2. MERMİYE ÇARPARSA (Senin istediğin kısım)
+        else if (collision.gameObject.CompareTag("Missile")) 
+        {
+            // --- XP KÜRESİ OLUŞTUR ---
+            ObjectPool.instance.SpawnFromPool("XPOrb", transform.position, Quaternion.identity);
+            
+            collision.gameObject.SetActive(false); // Mermiyi kapat
+            GameManager.instance.AddScore(100);    // Skor ver
+            gameObject.SetActive(false);           // Düşmanı kapat
         }
     }
 }

@@ -196,4 +196,39 @@ void PlayerShoot()
         }
         isInvulnerable = false; 
     }
+    // --- GÜÇLENDİRME (UPGRADE) FONKSİYONLARI ---
+    
+    // 1. Atış Hızını Arttır (Süreyi kısaltır)
+ // Ateş Hızını Arttır (Süreyi kısaltır)
+    public void UpgradeFireRate()
+    {
+        // ÖNEMLİ: 0.15 saniyenin altına inmesine izin verme!
+        // (Sayı küçüldükçe hız artar. 0.15 demek saniyede yaklaşık 6-7 mermi demek)
+        
+        if (fireRate > 0.15f) 
+        {
+            fireRate -= 0.05f; 
+            Debug.Log("Atış Hızı Arttı! Yeni Hız: " + fireRate);
+        }
+        else
+        {
+            Debug.Log("MAKSİMUM HIZA ULAŞILDI! Daha fazla hızlanamaz.");
+        }
+    }
+
+    // 2. Hareket Hızını Arttır
+    public void UpgradeSpeed()
+    {
+        moveSpeed += 2f;
+        Debug.Log("Hız Arttı!");
+    }
+
+    // 3. Canı Doldur ve Maksimum Canı Arttır
+    public void UpgradeHealth()
+    {
+        maxHealth += 1; // Maksimum canı 1 arttır (opsiyonel)
+        health = maxHealth; // Canı fulle
+        GameManager.instance.UpdateHealthUI(health, maxHealth); // Barı güncelle
+        Debug.Log("Can Fullendi ve Arttı!");
+    }
 }

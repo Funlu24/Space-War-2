@@ -36,6 +36,7 @@ public class AsteroidController : MonoBehaviour
         // Mermiye Çarparsa
         else if (collision.gameObject.CompareTag("Missile")) 
         {
+            ObjectPool.instance.SpawnFromPool("XPOrb", transform.position, Quaternion.identity);
             // Mermiyi kapat (Havuz mantığı)
             collision.gameObject.SetActive(false); 
             
