@@ -5042,7 +5042,7 @@ MonoBehaviour:
     prefab: {fileID: 7977812882126603558, guid: 02a0d87b4508d6e4fa3048b468a63317, type: 3}
     size: 10
   - tag: XPOrb
-    prefab: {fileID: 3496240521669644882, guid: 4f3929b4f022aa045b9f67ad584fb9be, type: 3}
+    prefab: {fileID: 7324399177016216278, guid: 4f3929b4f022aa045b9f67ad584fb9be, type: 3}
     size: 30
 --- !u!4 &2070825235
 Transform:
