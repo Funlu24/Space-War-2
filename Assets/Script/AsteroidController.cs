@@ -31,12 +31,19 @@ public class AsteroidController : MonoBehaviour
             {
                 playerScript.TakeDamage(); 
             }
+            if (AudioManager.instance != null)
+            {
+                // Düşmanla çarpışınca çalan sesin aynısı çalsın
+                AudioManager.instance.PlayCrash(); 
+            }
             DestroyAsteroid();
         }
         // Mermiye Çarparsa
         else if (collision.gameObject.CompareTag("Missile")) 
         {
             ObjectPool.instance.SpawnFromPool("XPOrb", transform.position, Quaternion.identity);
+            AudioManager.instance.PlayExplosion();
+            
             // Mermiyi kapat (Havuz mantığı)
             collision.gameObject.SetActive(false); 
             
@@ -47,6 +54,13 @@ public class AsteroidController : MonoBehaviour
 
     void DestroyAsteroid()
     {
+
+        if (CameraShake.instance != null)
+    {
+        CameraShake.instance.Shake(0.2f, 0.3f);
+    }
+
+        //AudioManager.instance.PlayExplosion();
         // Patlama efekti (Bunu şimdilik Instantiate bırakabiliriz, ilerde havuza alınabilir)
         if(GameManager.instance.ParticleEffect != null)
         {

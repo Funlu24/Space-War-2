@@ -16,6 +16,10 @@ public class EnemyBullet : MonoBehaviour
     {
         // Mermi aşağı doğru (Vector3.down) gider
         transform.Translate(Vector3.down * speed * Time.deltaTime);
+        if (transform.position.y < -7f)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -30,7 +34,11 @@ public class EnemyBullet : MonoBehaviour
             {
                 player.TakeDamage(); // Oyuncunun canını azalt
             }
-
+            if (AudioManager.instance != null)
+            {
+                // Düşman ve Meteor çarpmasıyla aynı sesi çalsın
+                AudioManager.instance.PlayCrash(); 
+            }
             // Mermiyi yok et
            gameObject.SetActive(false);
         }

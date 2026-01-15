@@ -116,6 +116,10 @@ public class EnemyController : MonoBehaviour
             {
                 player.TakeDamage(); // Oyuncunun canını azalt
             }
+            if(AudioManager.instance != null)
+            {
+               AudioManager.instance.PlayCrash();
+            }
             gameObject.SetActive(false); // Düşmanı yok et (XP vermez, çünkü sen çarptın)
         }
         
@@ -124,6 +128,13 @@ public class EnemyController : MonoBehaviour
         {
             // --- XP KÜRESİ OLUŞTUR ---
             ObjectPool.instance.SpawnFromPool("XPOrb", transform.position, Quaternion.identity);
+
+            AudioManager.instance.PlayExplosion();
+
+            if (CameraShake.instance != null)
+    {
+        CameraShake.instance.Shake(0.15f, 0.2f);
+    }
             
             collision.gameObject.SetActive(false); // Mermiyi kapat
             GameManager.instance.AddScore(100);    // Skor ver

@@ -115,6 +115,11 @@ public class GameManager : MonoBehaviour
         currentXP = 0; 
         requiredXP *= xpMultiplier; // Sonraki level zorlaşsın
 
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlayLevelUp();
+        }
+
         Time.timeScale = 0f; 
 
     // 2. Level Up Panelini Aç

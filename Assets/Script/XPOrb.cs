@@ -13,6 +13,8 @@ public class XPOrb : MonoBehaviour
 
         if (collision.CompareTag("Player"))
         {
+            AudioManager.instance.PlayXP();
+
             // 2. İspiyoncu: Çarpan şey Player mı?
             Debug.Log("EVET! Player çarptı, XP veriliyor.");
 

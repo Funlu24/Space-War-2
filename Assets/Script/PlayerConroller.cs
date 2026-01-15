@@ -8,6 +8,7 @@ public class PlayerConroller : MonoBehaviour
     public float moveSpeed = 10f;
     public int health = 3; 
     private bool isInvulnerable = false; 
+    public int maxHealth = 100;
 
     // Hareket girişlerini (Input) burada tutacağız
     private float moveX;
@@ -17,20 +18,25 @@ public class PlayerConroller : MonoBehaviour
     public GameObject[] heartIcons; 
 
     [Header("Missile")]
-    public GameObject MissiliePrefab;
+    public GameObject MissiliePrefab; // (ObjectPool kullandığımız için bu boş kalabilir)
     public Transform MuzzleSpawnPosition;
     public float DestroyTime = 5f;
     public Transform MissileSpawnPoint;
-
-    [Header("Components & Effects")]
-    public Animator shipAnimator;          
-    public GameObject EngineThrustEffect;  
-    private SpriteRenderer spriteRenderer; 
     
     public float fireRate = 0.2f;    // Ateş etme sıklığı (Saniye)
     private float nextFireTime = 0f; // Zamanlayıcı
-private bool isAutoFiring = false; // Başlangıçta kapalı olsun
-public int maxHealth = 100;
+    private bool isAutoFiring = false; // Başlangıçta kapalı olsun
+
+    [Header("Components & Effects")]
+    public Animator shipAnimator;          
+    public GameObject EngineThrustEffect;  // Eski sprite efekti (varsa kalsın)
+    
+    // --- YENİ EKLENEN KISIM ---
+    public ParticleSystem engineTrail;     // Yeni Motor İzi Efekti
+    // --------------------------
+
+    private SpriteRenderer spriteRenderer; 
+    
 
     private void Start()
     {
@@ -39,6 +45,13 @@ public int maxHealth = 100;
         
         // GameManager'a "Canımı fulle" de
         GameManager.instance.UpdateHealthUI(health, maxHealth);
+
+        // Başlangıçta motor izini kapatalım (Tuşa basınca açılsın)
+        if(engineTrail != null)
+        {
+            var emission = engineTrail.emission;
+            emission.enabled = false;
+        }
     }
 
    
@@ -66,12 +79,29 @@ public int maxHealth = 100;
         moveX = Input.GetAxisRaw("Horizontal");
         moveZ = Input.GetAxisRaw("Vertical");
 
-        // Motor Efekt Kontrolü (Görsel olduğu için Update/ProcessInput içinde kalabilir)
+        // 1. Eski Motor Efekt Kontrolü (GameObject olan)
         if (EngineThrustEffect != null)
         {
             if (moveZ > 0) EngineThrustEffect.SetActive(true);
             else EngineThrustEffect.SetActive(false);
         }
+
+        // --- 2. YENİ PARTICLE SYSTEM KONTROLÜ ---
+        // Sadece ileri (W veya Yukarı) giderken iz çıksın
+        if (engineTrail != null)
+        {
+            var emission = engineTrail.emission;
+            
+            if (moveZ > 0) // Gaza basılıyorsa
+            {
+                emission.enabled = true;
+            }
+            else // Duruyor veya geri gidiyorsa
+            {
+                emission.enabled = false;
+            }
+        }
+        // ----------------------------------------
 
         // Animasyon Kontrolü
         if (shipAnimator != null)
@@ -84,12 +114,9 @@ public int maxHealth = 100;
     void MovePlayer()
     {
         Vector3 direction = new Vector3(moveX, moveZ, 0);
-        // FixedUpdate içinde olduğumuz için Time.deltaTime kullanmak yine güvenlidir
-        // ama Unity burayı sabit aralıklarla çağırır.
+        
         if (direction.magnitude > 0)
         {
-            // .normalized diyerek vektörün boyunu 1'e sabitliyoruz.
-            // Böylece çapraz giderken hızlanmıyor.
             direction = direction.normalized;
         }
         Vector3 movement = direction * moveSpeed * Time.deltaTime;
@@ -106,21 +133,19 @@ public int maxHealth = 100;
 
     void CheckEnemyAhead()
     {
-        RaycastHit2D hit = Physics2D.Raycast(MissileSpawnPoint.position, Vector2.up, 10f);
+        // Debug amaçlı, oyun içinde görünmez
         Debug.DrawRay(MissileSpawnPoint.position, Vector3.up * 10f, Color.red);
     }
 
-void PlayerShoot()
+    void PlayerShoot()
     {
         // 1. AÇMA / KAPAMA KONTROLÜ
-        // Space tuşuna veya Mouse'a 1 kere basıldığında modu değiştir
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
-            isAutoFiring = !isAutoFiring; // True ise False yapar, False ise True yapar.
+            isAutoFiring = !isAutoFiring; 
         }
 
         // 2. ATEŞ ETME EYLEMİ
-        // Eğer mod AÇIKSA (isAutoFiring == true) ve zaman geldiyse ateş et
         if (isAutoFiring && Time.time > nextFireTime)
         {
             SpawnMissile();
@@ -131,21 +156,17 @@ void PlayerShoot()
 
     void SpawnMissile()
     {
-        //GameObject gm = Instantiate(MissiliePrefab, MissileSpawnPoint.position, Quaternion.identity);
-        //gm.transform.SetParent(null);
-        //Destroy(gm, DestroyTime);
         ObjectPool.instance.SpawnFromPool("PlayerBullet", MissileSpawnPoint.position, Quaternion.identity);
-    
+
+        // Ses Efekti (Hata vermemesi için kontrol ekli)
+        if (AudioManager.instance != null) 
+        {
+            AudioManager.instance.PlayShoot(); 
+        }
     }
 
     void SpawnMuzzleFlash()
     {
-       /* if (GameManager.instance.MuzzleFlashEffect != null)
-        {
-            GameObject muzzle = Instantiate(GameManager.instance.MuzzleFlashEffect, MissileSpawnPoint.position, Quaternion.identity);
-            muzzle.transform.SetParent(null);
-            Destroy(muzzle, DestroyTime);
-        }  */
         ObjectPool.instance.SpawnFromPool("MuzzleFlash", MissileSpawnPoint.position, Quaternion.identity);
     }
 
@@ -155,10 +176,14 @@ void PlayerShoot()
         {
             if (isInvulnerable) return;
 
-            GameObject impactEffect = Instantiate(GameManager.instance.ParticleEffect, transform.position, Quaternion.identity);
-            Destroy(impactEffect, 2f);
-           // Destroy(collision.gameObject);
-           collision.gameObject.SetActive(false);
+            // Çarpışma Efekti
+            if(GameManager.instance.ParticleEffect != null)
+            {
+                GameObject impactEffect = Instantiate(GameManager.instance.ParticleEffect, transform.position, Quaternion.identity);
+                Destroy(impactEffect, 2f);
+            }
+
+            collision.gameObject.SetActive(false);
             TakeDamage();
         }
     }
@@ -167,16 +192,23 @@ void PlayerShoot()
     {
         if (isInvulnerable) return;
 
-        // Canı azalt (Örneğin her vuruşta 10 azalır)
         health -= 10; 
 
         // GameManager'daki barı güncelle
         GameManager.instance.UpdateHealthUI(health, maxHealth);
+        
+        // Ekranı salla
+        if (CameraShake.instance != null)
+        {
+            CameraShake.instance.Shake(0.2f, 0.4f); 
+        }
 
         // Can 0 olursa öl
         if (health <= 0)
         {
             GameManager.instance.GameOver(); 
+            // Destroy(gameObject) yerine SetActive(false) kullanmak daha güvenli olabilir
+            // ama şimdilik senin kodunu korudum.
             Destroy(gameObject); 
         }
         else
@@ -184,6 +216,7 @@ void PlayerShoot()
             StartCoroutine(BlinkRoutine());
         }
     }
+
     IEnumerator BlinkRoutine()
     {
         isInvulnerable = true; 
@@ -196,15 +229,11 @@ void PlayerShoot()
         }
         isInvulnerable = false; 
     }
+
     // --- GÜÇLENDİRME (UPGRADE) FONKSİYONLARI ---
     
-    // 1. Atış Hızını Arttır (Süreyi kısaltır)
- // Ateş Hızını Arttır (Süreyi kısaltır)
     public void UpgradeFireRate()
     {
-        // ÖNEMLİ: 0.15 saniyenin altına inmesine izin verme!
-        // (Sayı küçüldükçe hız artar. 0.15 demek saniyede yaklaşık 6-7 mermi demek)
-        
         if (fireRate > 0.15f) 
         {
             fireRate -= 0.05f; 
@@ -212,23 +241,21 @@ void PlayerShoot()
         }
         else
         {
-            Debug.Log("MAKSİMUM HIZA ULAŞILDI! Daha fazla hızlanamaz.");
+            Debug.Log("MAKSİMUM HIZA ULAŞILDI!");
         }
     }
 
-    // 2. Hareket Hızını Arttır
     public void UpgradeSpeed()
     {
         moveSpeed += 2f;
         Debug.Log("Hız Arttı!");
     }
 
-    // 3. Canı Doldur ve Maksimum Canı Arttır
     public void UpgradeHealth()
     {
-        maxHealth += 1; // Maksimum canı 1 arttır (opsiyonel)
-        health = maxHealth; // Canı fulle
-        GameManager.instance.UpdateHealthUI(health, maxHealth); // Barı güncelle
+        maxHealth += 10; // Can upgrade alınca max can artsın (Seninkinde 1'di 10 yaptım daha mantıklı olsun diye)
+        health = maxHealth; 
+        GameManager.instance.UpdateHealthUI(health, maxHealth); 
         Debug.Log("Can Fullendi ve Arttı!");
     }
 }
