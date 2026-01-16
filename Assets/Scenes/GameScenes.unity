@@ -9834,6 +9834,10 @@ MonoBehaviour:
   moveSpeed: 10
   health: 3
   maxHealth: 100
+  dashSpeed: 20
+  dashDuration: 0.2
+  dashCooldown: 1.5
+  invulnerabilityTime: 1.5
   heartIcons:
   - {fileID: 0}
   - {fileID: 0}

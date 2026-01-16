@@ -7,8 +7,19 @@ public class PlayerConroller : MonoBehaviour
     [Header("Movement & Health")]
     public float moveSpeed = 10f;
     public int health = 3; 
-    private bool isInvulnerable = false; 
     public int maxHealth = 100;
+    
+    // --- DASH (ATILMA) AYARLARI ---
+    [Header("Dash Settings")]
+    public float dashSpeed = 25f;        // Dash hızı (Normalden hızlı olmalı)
+    public float dashDuration = 0.2f;    // Atılma süresi (Kısa olmalı)
+    public float dashCooldown = 1.5f;    // Tekrar basabilmek için bekleme süresi
+    public float invulnerabilityTime = 1.5f; // Hasar almama süresi
+    
+    private bool isDashing = false;      // Şu an Dash atıyor mu?
+    private bool isInvulnerable = false; // Şu an dokunulmaz mı?
+    private float nextDashTime = 0f;     // Dash zamanlayıcısı
+    // -----------------------------
 
     // Hareket girişlerini (Input) burada tutacağız
     private float moveX;
@@ -18,22 +29,19 @@ public class PlayerConroller : MonoBehaviour
     public GameObject[] heartIcons; 
 
     [Header("Missile")]
-    public GameObject MissiliePrefab; // (ObjectPool kullandığımız için bu boş kalabilir)
+    public GameObject MissiliePrefab; 
     public Transform MuzzleSpawnPosition;
     public float DestroyTime = 5f;
     public Transform MissileSpawnPoint;
     
-    public float fireRate = 0.2f;    // Ateş etme sıklığı (Saniye)
-    private float nextFireTime = 0f; // Zamanlayıcı
-    private bool isAutoFiring = false; // Başlangıçta kapalı olsun
+    public float fireRate = 0.2f;    
+    private float nextFireTime = 0f; 
+    private bool isAutoFiring = false; 
 
     [Header("Components & Effects")]
     public Animator shipAnimator;          
-    public GameObject EngineThrustEffect;  // Eski sprite efekti (varsa kalsın)
-    
-    // --- YENİ EKLENEN KISIM ---
+    public GameObject EngineThrustEffect;  
     public ParticleSystem engineTrail;     // Yeni Motor İzi Efekti
-    // --------------------------
 
     private SpriteRenderer spriteRenderer; 
     
@@ -43,10 +51,9 @@ public class PlayerConroller : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = maxHealth; 
         
-        // GameManager'a "Canımı fulle" de
         GameManager.instance.UpdateHealthUI(health, maxHealth);
 
-        // Başlangıçta motor izini kapatalım (Tuşa basınca açılsın)
+        // Başlangıçta motor izini kapatalım
         if(engineTrail != null)
         {
             var emission = engineTrail.emission;
@@ -57,15 +64,27 @@ public class PlayerConroller : MonoBehaviour
    
     private void Update()
     {
-        ProcessInputs(); // Inputları alan fonksiyon
+        ProcessInputs(); 
         PlayerShoot();
         CheckEnemyAhead();
+
+        // --- DASH KONTROLÜ (YENİ) ---
+        // Left Shift'e basıldıysa, cooldown dolduysa ve şu an dash atmıyorsa
+        if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time >= nextDashTime && !isDashing)
+        {
+            StartCoroutine(DashRoutine());
+        }
+        // ----------------------------
     }
 
     
     private void FixedUpdate()
     {
-        MovePlayer();
+        // Dash atarken normal hareket kodunu çalıştırma, çakışmasın
+        if (!isDashing)
+        {
+            MovePlayer();
+        }
     }
 
     private void LateUpdate()
@@ -75,20 +94,19 @@ public class PlayerConroller : MonoBehaviour
 
     void ProcessInputs()
     {
-        // Tuş verilerini alıp değişkenlere kaydediyoruz
         moveX = Input.GetAxisRaw("Horizontal");
         moveZ = Input.GetAxisRaw("Vertical");
 
-        // 1. Eski Motor Efekt Kontrolü (GameObject olan)
+        // 1. Eski Motor Efekt Kontrolü
         if (EngineThrustEffect != null)
         {
             if (moveZ > 0) EngineThrustEffect.SetActive(true);
             else EngineThrustEffect.SetActive(false);
         }
 
-        // --- 2. YENİ PARTICLE SYSTEM KONTROLÜ ---
-        // Sadece ileri (W veya Yukarı) giderken iz çıksın
-        if (engineTrail != null)
+        // 2. PARTICLE SYSTEM KONTROLÜ
+        // Eğer Dash atıyorsak burası karışmasın, DashRoutine yönetecek
+        if (engineTrail != null && !isDashing)
         {
             var emission = engineTrail.emission;
             
@@ -96,19 +114,17 @@ public class PlayerConroller : MonoBehaviour
             {
                 emission.enabled = true;
             }
-            else // Duruyor veya geri gidiyorsa
+            else // Duruyorsa
             {
                 emission.enabled = false;
             }
         }
-        // ----------------------------------------
 
         // Animasyon Kontrolü
         if (shipAnimator != null)
         {
             shipAnimator.SetBool("IsMoving", moveX != 0 || moveZ != 0);
         }
-    
     }
 
     void MovePlayer()
@@ -123,6 +139,54 @@ public class PlayerConroller : MonoBehaviour
         transform.Translate(movement);
     }
 
+    // --- YENİ EKLENEN DASH FONKSİYONU ---
+    IEnumerator DashRoutine()
+    {
+        isDashing = true;
+        isInvulnerable = true; // Hasar almazlık başlasın
+        nextDashTime = Time.time + dashCooldown; // Cooldown ayarla
+
+        // 1. Dash yönünü belirle (Tuşlara basılmıyorsa ileri git)
+        Vector3 dashDir = new Vector3(moveX, moveZ, 0).normalized;
+        if (dashDir == Vector3.zero) dashDir = Vector3.up;
+
+        // 2. Motor İzini Zorla Aç (Görsellik için)
+        if (engineTrail != null)
+        {
+            var emission = engineTrail.emission;
+            emission.enabled = true;
+        }
+
+        // 3. Yanıp Sönmeyi Başlat (Dokunulmazlık süresi kadar)
+        StartCoroutine(BlinkRoutine(invulnerabilityTime));
+
+        // 4. Fiziksel Atılma Hareketi
+        float startTime = Time.time;
+        while (Time.time < startTime + dashDuration)
+        {
+            // Normal hız yerine dashSpeed kullanıyoruz
+            transform.Translate(dashDir * dashSpeed * Time.deltaTime);
+            ClampPosition(); // Dash atarken ekrandan çıkmasın
+            yield return null;
+        }
+
+        // 5. Dash Hareketi Bitti
+        isDashing = false;
+
+        // Eğer oyuncu "W" tuşuna basmıyorsa izi kapat
+        if (engineTrail != null && moveZ <= 0)
+        {
+            var emission = engineTrail.emission;
+            emission.enabled = false;
+        }
+
+        // Dokunulmazlık süresinin geri kalanını bekle
+        yield return new WaitForSeconds(invulnerabilityTime - dashDuration);
+        
+        isInvulnerable = false; // Artık hasar alabilir
+    }
+    // ------------------------------------
+
     void ClampPosition()
     {
         Vector3 viewPos = transform.position;
@@ -133,19 +197,16 @@ public class PlayerConroller : MonoBehaviour
 
     void CheckEnemyAhead()
     {
-        // Debug amaçlı, oyun içinde görünmez
         Debug.DrawRay(MissileSpawnPoint.position, Vector3.up * 10f, Color.red);
     }
 
     void PlayerShoot()
     {
-        // 1. AÇMA / KAPAMA KONTROLÜ
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
             isAutoFiring = !isAutoFiring; 
         }
 
-        // 2. ATEŞ ETME EYLEMİ
         if (isAutoFiring && Time.time > nextFireTime)
         {
             SpawnMissile();
@@ -158,7 +219,6 @@ public class PlayerConroller : MonoBehaviour
     {
         ObjectPool.instance.SpawnFromPool("PlayerBullet", MissileSpawnPoint.position, Quaternion.identity);
 
-        // Ses Efekti (Hata vermemesi için kontrol ekli)
         if (AudioManager.instance != null) 
         {
             AudioManager.instance.PlayShoot(); 
@@ -174,9 +234,9 @@ public class PlayerConroller : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemy"))
         {
+            // Eğer Dash attıysak veya dokunulmazsak HASAR ALMA
             if (isInvulnerable) return;
 
-            // Çarpışma Efekti
             if(GameManager.instance.ParticleEffect != null)
             {
                 GameObject impactEffect = Instantiate(GameManager.instance.ParticleEffect, transform.position, Quaternion.identity);
@@ -188,46 +248,51 @@ public class PlayerConroller : MonoBehaviour
         }
     }
 
+    // Mermiler trigger ise burası da lazım olabilir
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+         if (isInvulnerable) return; // Dokunulmazken mermiler işlemesin
+    }
+
     public void TakeDamage()
     {
         if (isInvulnerable) return;
 
         health -= 10; 
-
-        // GameManager'daki barı güncelle
         GameManager.instance.UpdateHealthUI(health, maxHealth);
         
-        // Ekranı salla
         if (CameraShake.instance != null)
         {
             CameraShake.instance.Shake(0.2f, 0.4f); 
         }
 
-        // Can 0 olursa öl
+        // Hasar alınca kısa bir dokunulmazlık (1 saniye)
+        StartCoroutine(BlinkRoutine(1f)); 
+
         if (health <= 0)
         {
             GameManager.instance.GameOver(); 
-            // Destroy(gameObject) yerine SetActive(false) kullanmak daha güvenli olabilir
-            // ama şimdilik senin kodunu korudum.
             Destroy(gameObject); 
-        }
-        else
-        {
-            StartCoroutine(BlinkRoutine());
         }
     }
 
-    IEnumerator BlinkRoutine()
+    // BlinkRoutine güncellendi: Artık süre parametresi alıyor
+    IEnumerator BlinkRoutine(float duration)
     {
         isInvulnerable = true; 
-        for (int i = 0; i < 5; i++)
+        float endTime = Time.time + duration;
+
+        while (Time.time < endTime)
         {
             spriteRenderer.enabled = false; 
             yield return new WaitForSeconds(0.1f); 
             spriteRenderer.enabled = true; 
             yield return new WaitForSeconds(0.1f); 
         }
-        isInvulnerable = false; 
+        
+        spriteRenderer.enabled = true;
+        // Not: isInvulnerable false yapmıyoruz, onu çağıran yer (Dash veya TakeDamage) yönetiyor
+        if(!isDashing) isInvulnerable = false;
     }
 
     // --- GÜÇLENDİRME (UPGRADE) FONKSİYONLARI ---
@@ -253,7 +318,7 @@ public class PlayerConroller : MonoBehaviour
 
     public void UpgradeHealth()
     {
-        maxHealth += 10; // Can upgrade alınca max can artsın (Seninkinde 1'di 10 yaptım daha mantıklı olsun diye)
+        maxHealth += 10; 
         health = maxHealth; 
         GameManager.instance.UpdateHealthUI(health, maxHealth); 
         Debug.Log("Can Fullendi ve Arttı!");
